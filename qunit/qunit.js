@@ -65,7 +65,9 @@ Test.prototype = {
 		config.current = this;
 		this.testEnvironment = extend({
 			setup: function() {},
-			teardown: function() {}
+			teardown: function() {},
+			module_setup: function() {},
+			module_teardown: function() {}
 		}, this.moduleTestEnvironment);
 		if (this.testEnvironmentArg) {
 			extend(this.testEnvironment, this.testEnvironmentArg);
@@ -82,6 +84,11 @@ Test.prototype = {
 		try {
 			if ( !config.pollution ) {
 				saveGlobal();
+			}
+			
+			if ( !this.moduleTestEnvironment.moduleSetupDone ) {
+				this.moduleTestEnvironment.moduleSetupDone = true;
+				this.moduleTestEnvironment.module_setup.call(this.testEnvironment);
 			}
 
 			this.testEnvironment.setup.call(this.testEnvironment);
@@ -115,6 +122,11 @@ Test.prototype = {
 	teardown: function() {
 		try {
 			checkPollution();
+			
+			if ( config.queue.length == 1 ) {
+				this.moduleTestEnvironment.module_teardown.call(this.testEnvironment);
+			}
+			
 			this.testEnvironment.teardown.call(this.testEnvironment);
 		} catch(e) {
 			QUnit.ok( false, "Teardown failed on " + this.testName + ": " + e.message );
